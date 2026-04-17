@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decision Boundary Lab — ML可视化实验台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0e1a;
+            --surface: #111827;
+            --surface2: #1a2235;
+            --surface3: #1e2a3f;
+            --border: #2a3655;
+            --accent: #60a5fa;
+            --accent2: #34d399;
+            --accent3: #f472b6;
+            --accent4: #fbbf24;
+            --text: #e2e8f0;
+            --text2: #94a3b8;
+            --text3: #64748b;
+            --class0: #60a5fa;
+            --class1: #f472b6;
+            --class2: #34d399;
+            --class3: #fbbf24;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: linear-gradient(135deg, #0d1225 0%, #111827 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 0 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            white-space: nowrap;
+        }
+        .header-badge {
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 20px;
+            background: rgba(96,165,250,0.15);
+            color: var(--accent);
+            border: 1px solid rgba(96,165,250,0.3);
+            font-weight: 600;
+        }
+        .header-spacer { flex: 1; }
+        .header-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+        .header-links a {
+            color: var(--text2);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .header-links a:hover { color: var(--accent); }
+
+        /* ── Main Layout ── */
+        .main {
+            display: grid;
+            grid-template-columns: 320px 1fr 300px;
+            gap: 0;
+            min-height: calc(100vh - 64px);
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .panel-title {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text3);
+            margin-bottom: 0.75rem;
+        }
+        .panel {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        /* Form controls */
+        .form-group {
+            margin-bottom: 0.85rem;
+        }
+        .form-group:last-child { margin-bottom: 0; }
+        .form-label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text2);
+            margin-bottom: 0.4rem;
+            display: block;
+        }
+        select, input[type="range"], input[type="number"] {
+            width: 100%;
+            background: var(--surface3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        select {
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+        }
+        select:focus, input:focus {
+            border-color: var(--accent);
+        }
+        input[type="range"] {
+            padding: 4px 0;
+            height: 32px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 4px;
+            border-radius: 2px;
+            background: var(--border);
+        }
+        input[type="number"] {
+            padding: 0.4rem 0.6rem;
+        }
+        .range-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .range-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent);
+            min-width: 40px;
+            text-align: right;
+        }
+
+        /* Model selector pills */
+        .model-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+        }
+        .model-pill {
+            padding: 0.3rem 0.7rem;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            background: var(--surface3);
+            color: var(--text2);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .model-pill:hover { border-color: var(--accent); color: var(--accent); }
+        .model-pill.active {
+            background: rgba(96,165,250,0.15);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        /* Buttons */
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.65rem 1rem;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent), #3b82f6);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(96,165,250,0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(96,165,250,0.4);
+        }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-secondary {
+            background: var(--surface3);
+            color: var(--text2);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-compare {
+            background: linear-gradient(135deg, var(--accent2), #059669);
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(52,211,153,0.3);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Compare section */
+        .compare-models {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-bottom: 0.75rem;
+        }
+        .compare-item {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.25rem 0.6rem;
+            background: var(--surface3);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .compare-item input { display: none; }
+        .compare-item.selected {
+            background: rgba(52,211,153,0.15);
+            border-color: var(--accent2);
+            color: var(--accent2);
+        }
+        .compare-item label {
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* ── Visualization ── */
+        .viz-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            gap: 1rem;
+            position: relative;
+            background: radial-gradient(ellipse at center, #0f1628 0%, var(--bg) 70%);
+            min-height: calc(100vh - 64px);
+        }
+        .viz-container {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 0 60px rgba(96,165,250,0.1), 0 0 0 1px var(--border);
+        }
+        #mainCanvas {
+            display: block;
+            background: #080c18;
+            border-radius: 16px;
+        }
+        .viz-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            color: var(--text3);
+            padding: 4rem;
+            text-align: center;
+        }
+        .viz-placeholder-icon {
+            font-size: 3rem;
+            opacity: 0.3;
+        }
+        .viz-placeholder-text {
+            font-size: 0.9rem;
+            max-width: 280px;
+            line-height: 1.6;
+        }
+        .loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(8,12,24,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1rem;
+            border-radius: 16px;
+            z-index: 10;
+        }
+        .loading-overlay.visible { display: flex; }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--accent);
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            font-size: 0.78rem;
+            color: var(--text2);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .legend-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+        }
+        .legend-dot.train { background: var(--accent); opacity: 0.7; }
+        .legend-dot.test { background: var(--accent3); opacity: 0.9; }
+
+        /* ── Info Panel (Right) ── */
+        .info-panel {
+            background: var(--surface);
+            border-left: 1px solid var(--border);
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        /* Accuracy display */
+        .accuracy-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .accuracy-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .accuracy-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text3);
+            margin-bottom: 0.4rem;
+        }
+        .accuracy-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        .accuracy-value.good { color: var(--accent2); }
+        .accuracy-value.ok { color: var(--accent4); }
+        .accuracy-value.bad { color: var(--accent3); }
+
+        /* Compare results */
+        .compare-results {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .compare-row {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .compare-row:hover { border-color: var(--accent); }
+        .compare-row.selected { border-color: var(--accent2); background: rgba(52,211,153,0.05); }
+        .compare-model-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text2);
+        }
+        .compare-model-acc {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        /* Model info card */
+        .model-info {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+        .model-info-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 0.75rem;
+        }
+        .model-info-params {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .param-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+        }
+        .param-key { color: var(--text3); }
+        .param-val {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text2);
+        }
+
+        /* Dataset stats */
+        .dataset-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        .stat-item {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.6rem;
+            text-align: center;
+        }
+        .stat-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .stat-label {
+            font-size: 0.62rem;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Tips */
+        .tips {
+            font-size: 0.75rem;
+            color: var(--text3);
+            line-height: 1.7;
+        }
+        .tips strong { color: var(--accent); }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        /* Mobile */
+        @media (max-width: 1024px) {
+            .main { grid-template-columns: 1fr; }
+            .sidebar, .info-panel { display: none; }
+        }
+
+        /* Boundary style selector */
+        .boundary-style {
+            display: flex;
+            gap: 0.4rem;
+        }
+        .bs-btn {
+            flex: 1;
+            padding: 0.4rem;
+            border: 1px solid var(--border);
+            background: var(--surface3);
+            border-radius: 6px;
+            color: var(--text3);
+            font-size: 0.72rem;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .bs-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .bs-btn.active {
+            background: rgba(96,165,250,0.15);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .resolution-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .resolution-btns {
+            display: flex;
+            gap: 0.3rem;
+        }
+        .res-btn {
+            padding: 0.2rem 0.5rem;
+            border: 1px solid var(--border);
+            background: var(--surface3);
+            border-radius: 4px;
+            color: var(--text3);
+            font-size: 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .res-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .res-btn.active {
+            background: rgba(96,165,250,0.15);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+    <span class="header-logo">boundary.lab</span>
+    <span class="header-badge">ML Decision Boundary Visualizer</span>
+    <div class="header-spacer"></div>
+    <div class="header-links">
+        <a href="https://scikit-learn.org" target="_blank">scikit-learn</a>
+        <a href="https://github.com" target="_blank">GitHub</a>
+    </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+    <!-- Left Sidebar -->
+    <div class="sidebar">
+
+        <!-- Dataset -->
+        <div>
+            <div class="panel-title">Dataset</div>
+            <div class="panel">
+                <div class="form-group">
+                    <label class="form-label">Shape</label>
+                    <select id="dataset_type">
+                        <option value="circles">Two Circles</option>
+                        <option value="moons">Two Moons</option>
+                        <option value="blobs">Blobs (3 clusters)</option>
+                        <option value="classification">Linear Separation</option>
+                        <option value="gaussian_quantiles">Gaussian Quantiles</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Samples</label>
+                    <div class="range-row">
+                        <input type="range" id="n_samples" min="100" max="600" step="50" value="300">
+                        <span class="range-val" id="n_samples_val">300</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Noise</label>
+                    <div class="range-row">
+                        <input type="range" id="noise" min="0" max="40" step="1" value="10">
+                        <span class="range-val" id="noise_val">0.10</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Class Separation</label>
+                    <div class="range-row">
+                        <input type="range" id="class_sep" min="5" max="30" step="1" value="15">
+                        <span class="range-val" id="class_sep_val">1.5</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model -->
+        <div>
+            <div class="panel-title">Model</div>
+            <div class="panel">
+                <div class="model-pills" id="model_pills">
+                    <div class="model-pill active" data-model="svm">SVM</div>
+                    <div class="model-pill" data-model="logistic">LR</div>
+                    <div class="model-pill" data-model="decision_tree">Tree</div>
+                    <div class="model-pill" data-model="random_forest">RF</div>
+                    <div class="model-pill" data-model="knn">KNN</div>
+                    <div class="model-pill" data-model="mlp">MLP</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hyperparameters -->
+        <div id="hyperparams_panel">
+            <div class="panel-title">Hyperparameters</div>
+            <div class="panel" id="params_container">
+                <!-- Dynamic params injected here -->
+            </div>
+        </div>
+
+        <!-- Resolution -->
+        <div>
+            <div class="panel-title">Visualization</div>
+            <div class="panel">
+                <div class="form-group">
+                    <label class="form-label">Boundary Resolution</label>
+                    <div class="resolution-btns">
+                        <button class="res-btn" data-res="40">40²</button>
+                        <button class="res-btn active" data-res="80">80²</button>
+                        <button class="res-btn" data-res="120">120²</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Boundary Style</label>
+                    <div class="boundary-style">
+                        <button class="bs-btn active" data-style="filled">Filled</button>
+                        <button class="bs-btn" data-style="contour">Contour</button>
+                        <button class="bs-btn" data-style="proba">Prob</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display:flex;flex-direction:column;gap:0.5rem;margin-top:auto;">
+            <button class="btn btn-primary" id="train_btn" onclick="train()">
+                🚀 Train Model
+            </button>
+            <button class="btn btn-compare" onclick="runCompare()">
+                ⚡ Compare All
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Visualization -->
+    <div class="viz-area">
+        <div class="viz-container">
+            <canvas id="mainCanvas" width="560" height="560"></canvas>
+            <div class="loading-overlay" id="loading">
+                <div class="spinner"></div>
+                <div class="loading-text">Training model...</div>
+            </div>
+        </div>
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot train"></div> Training set</div>
+            <div class="legend-item"><div class="legend-dot test"></div> Test set</div>
+            <span id="status_text" style="font-size:0.75rem;color:var(--text3);margin-left:1rem;"></span>
+        </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="info-panel">
+
+        <!-- Accuracy -->
+        <div>
+            <div class="panel-title">Accuracy</div>
+            <div class="accuracy-grid">
+                <div class="accuracy-card">
+                    <div class="accuracy-label">Train</div>
+                    <div class="accuracy-value" id="train_acc">—</div>
+                </div>
+                <div class="accuracy-card">
+                    <div class="accuracy-label">Test</div>
+                    <div class="accuracy-value" id="test_acc">—</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dataset Stats -->
+        <div>
+            <div class="panel-title">Dataset Info</div>
+            <div class="dataset-stats">
+                <div class="stat-item">
+                    <div class="stat-val" id="n_train">—</div>
+                    <div class="stat-label">Train</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-val" id="n_test">—</div>
+                    <div class="stat-label">Test</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-val" id="n_classes">2</div>
+                    <div class="stat-label">Classes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-val" id="resolution_display">80²</div>
+                    <div class="stat-label">Grid</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model Info -->
+        <div>
+            <div class="panel-title">Current Model</div>
+            <div class="model-info">
+                <div class="model-info-title" id="model_name">SVM (RBF)</div>
+                <div class="model-info-params" id="model_params_display">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Compare Results -->
+        <div id="compare_section" style="display:none;">
+            <div class="panel-title">Compare Results</div>
+            <div class="compare-results" id="compare_results">
+                <!-- Dynamic -->
+            </div>
+        </div>
+
+        <!-- Tips -->
+        <div>
+            <div class="panel-title">Tips</div>
+            <div class="tips" id="tips_text">
+                <strong>SVM RBF</strong> can learn complex non-linear boundaries. Try increasing <strong>C</strong> to reduce underfitting.<br><br>
+                <strong>KNN</strong> with small k captures fine details; large k is smoother.<br><br>
+                <strong>Decision Tree</strong> depth controls complexity. Shallow → underfitting, Deep → overfitting.
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// ─── State ──────────────────────────────────────────────────────────────
+let currentData = null;
+let currentModel = 'svm';
+let boundaryStyle = 'filled';
+let compareMode = false;
+let compareData = null;
+let currentResolution = 80;
+
+const modelMeta = {
+    svm: { name: 'SVM (RBF)', desc: 'Support Vector Machine with RBF kernel', color: '#60a5fa' },
+    logistic: { name: 'Logistic Regression', desc: 'Linear classifier with sigmoid', color: '#34d399' },
+    decision_tree: { name: 'Decision Tree', desc: 'Tree-based splits', color: '#f472b6' },
+    random_forest: { name: 'Random Forest', desc: 'Ensemble of decision trees', color: '#fbbf24' },
+    knn: { name: 'K-Nearest Neighbors', desc: 'Instance-based learning', color: '#c084fc' },
+    mlp: { name: 'MLP Neural Network', desc: 'Multi-layer perceptron', color: '#fb923c' },
+};
+
+const paramConfigs = {
+    svm: [
+        { key: 'C', label: 'C (Regularization)', min: 0.01, max: 20, step: 0.1, val: 1.0, fmt: v => v.toFixed(2) },
+        { key: 'gamma', label: 'Gamma (RBF)', min: 0.001, max: 5, step: 0.01, val: 0.5, fmt: v => v < 1 ? v.toFixed(3) : v.toFixed(1), scale: 'auto' },
+    ],
+    logistic: [
+        { key: 'C', label: 'C (Regularization)', min: 0.01, max: 20, step: 0.1, val: 1.0, fmt: v => v.toFixed(2) },
+    ],
+    decision_tree: [
+        { key: 'max_depth', label: 'Max Depth', min: 1, max: 20, step: 1, val: 5, fmt: v => v },
+    ],
+    random_forest: [
+        { key: 'max_depth', label: 'Max Depth', min: 1, max: 20, step: 1, val: 5, fmt: v => v },
+        { key: 'n_estimators', label: 'Trees', min: 10, max: 200, step: 10, val: 100, fmt: v => v },
+    ],
+    knn: [
+        { key: 'n_neighbors', label: 'K (Neighbors)', min: 1, max: 30, step: 1, val: 5, fmt: v => v },
+    ],
+    mlp: [
+        { key: 'hidden_layer_sizes_0', label: 'Hidden Size', min: 10, max: 200, step: 10, val: 50, fmt: v => v },
+    ],
+};
+
+// ─── Init ─────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    // Model pills
+    document.querySelectorAll('.model-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+            document.querySelectorAll('.model-pill').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            currentModel = pill.dataset.model;
+            updateParamControls();
+            updateModelInfo();
+            updateTips();
+        });
+    });
+
+    // Resolution buttons
+    document.querySelectorAll('.res-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.res-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentResolution = parseInt(btn.dataset.res);
+            document.getElementById('resolution_display').textContent = `${currentResolution}²`;
+            if (currentData) drawBoundary(currentData);
+        });
+    });
+
+    // Boundary style
+    document.querySelectorAll('.bs-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.bs-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            boundaryStyle = btn.dataset.style;
+            if (currentData) drawBoundary(currentData);
+        });
+    });
+
+    // Range sliders
+    document.getElementById('n_samples').addEventListener('input', e => {
+        document.getElementById('n_samples_val').textContent = e.target.value;
+    });
+    document.getElementById('noise').addEventListener('input', e => {
+        document.getElementById('noise_val').textContent = (e.target.value / 100).toFixed(2);
+    });
+    document.getElementById('class_sep').addEventListener('input', e => {
+        document.getElementById('class_sep_val').textContent = (e.target.value / 10).toFixed(1);
+    });
+
+    // Show placeholder
+    showPlaceholder();
+    updateParamControls();
+    updateModelInfo();
+    updateTips();
+});
+
+function updateParamControls() {
+    const container = document.getElementById('params_container');
+    const params = paramConfigs[currentModel] || [];
+    if (params.length === 0) {
+        container.innerHTML = '<div style="font-size:0.78rem;color:var(--text3);">No tunable params</div>';
+        return;
+    }
+    container.innerHTML = params.map(p => `
+        <div class="form-group">
+            <label class="form-label">${p.label}</label>
+            <div class="range-row">
+                <input type="range"
+                    id="param_${p.key}"
+                    min="${p.min}" max="${p.max}" step="${p.step}"
+                    value="${p.val}"
+                    oninput="document.getElementById('pval_${p.key}').textContent='${p.fmt ? `\\${p.fmt}(this.value)}` : 'this.value'}';document.getElementById('pval_${p.key}').textContent=${p.fmt ? `formatVal_${p.key}(this.value)` : 'this.value'}">
+                <span class="range-val" id="pval_${p.key}">${p.fmt ? p.fmt(p.val) : p.val}</span>
+            </div>
+        </div>
+    `).join('');
+
+    // Add format functions
+    params.forEach(p => {
+        if (p.fmt && p.key !== 'hidden_layer_sizes_0') {
+            const input = document.getElementById(`param_${p.key}`);
+            if (input) {
+                const originalOninput = input.oninput;
+                input.oninput = function() {
+                    document.getElementById(`pval_${p.key}`).textContent = p.fmt(parseFloat(this.value));
+                    if (originalOninput) originalOninput.call(this);
+                };
+            }
+        }
+    });
+}
+
+function getModelParams() {
+    const params = paramConfigs[currentModel] || [];
+    const result = {};
+    params.forEach(p => {
+        const input = document.getElementById(`param_${p.key}`);
+        if (input) {
+            let val = parseFloat(input.value);
+            if (p.key === 'gamma' && val < 1) val = val.toFixed(3);
+            result[p.key] = val;
+        }
+    });
+    // Special handling for MLP hidden_layer_sizes
+    if (currentModel === 'mlp') {
+        result.hidden_layer_sizes = [parseInt(result.hidden_layer_sizes_0 || 50)];
+        delete result.hidden_layer_sizes_0;
+    }
+    return result;
+}
+
+function updateModelInfo() {
+    const meta = modelMeta[currentModel];
+    document.getElementById('model_name').textContent = meta.name;
+    const params = paramConfigs[currentModel] || [];
+    const container = document.getElementById('model_params_display');
+    container.innerHTML = params.map(p => `
+        <div class="param-row">
+            <span class="param-key">${p.label}</span>
+            <span class="param-val" id="pinfo_${p.key}">${p.fmt ? p.fmt(parseFloat(document.getElementById(`param_${p.key}`)?.value || p.val)) : p.val}</span>
+        </div>
+    `).join('');
+}
+
+
+function updateTips() {
+    const tips = {
+        svm: '<strong>SVM RBF</strong> learns complex non-linear boundaries. Higher <strong>C</strong> → harder margin (risk overfit). <strong>Gamma</strong> controls RBF reach — low gamma = smooth, high gamma = wiggly.',
+        logistic: '<strong>Logistic Regression</strong> finds a linear boundary. <strong>C</strong> is inverse regularization strength — low C = smooth, high C = complex.',
+        decision_tree: '<strong>Decision Tree</strong> makes axis-aligned splits. <strong>Max Depth</strong> is the key — shallow = underfit, deep = overfit. Watch the train/test gap!',
+        random_forest: '<strong>Random Forest</strong> ensembles many trees. More trees = more stable. <strong>Max Depth</strong> still controls individual tree complexity.',
+        knn: '<strong>KNN</strong> classifies by majority vote of neighbors. Small k = sensitive to noise. Large k = smoother boundary but may underfit.',
+        mlp: '<strong>MLP</strong> learns non-linear combinations of features. Larger hidden layer = more capacity, but risk of overfitting.',
+    };
+    document.getElementById('tips_text').innerHTML = tips[currentModel] || '';
+}
+
+// ─── API Calls ───────────────────────────────────────────────────────────
+
+function getDatasetParams() {
+    const datasetType = document.getElementById('dataset_type').value;
+    const n = parseInt(document.getElementById('n_samples').value);
+    const noise = parseFloat(document.getElementById('noise').value) / 100;
+    const classSep = parseFloat(document.getElementById('class_sep').value) / 10;
+    const params = { n, noise };
+    if (datasetType === 'blobs') {
+        params.centers = 3;
+        params.cluster_std = 2.0;
+    } else if (datasetType === 'classification') {
+        params.class_sep = classSep;
+    } else if (datasetType === 'gaussian_quantiles') {
+        params.n_mean_shift = classSep - 1.5;
+    }
+    return params;
+}
+
+function setLoading(on) {
+    document.getElementById('loading').classList.toggle('visible', on);
+    document.getElementById('train_btn').disabled = on;
+}
+
+function showPlaceholder() {
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#080c18';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#2a3655';
+    ctx.font = '14px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText('⬡ Click "Train Model" to visualize', canvas.width/2, canvas.height/2 - 10);
+    ctx.fillText('decision boundaries', canvas.width/2, canvas.height/2 + 12);
+}
+
+async function train() {
+    setLoading(true);
+    compareMode = false;
+    document.getElementById('compare_section').style.display = 'none';
+    
+    const body = {
+        model_type: currentModel,
+        dataset_type: document.getElementById('dataset_type').value,
+        dataset_params: getDatasetParams(),
+        model_params: getModelParams(),
+        resolution: currentResolution,
+    };
+
+    try {
+        const res = await fetch('/api/train', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (data.success) {
+            currentData = data;
+            drawBoundary(data);
+            updateStats(data);
+            updateParamDisplay();
+        }
+    } catch (err) {
+        console.error('Train error:', err);
+        document.getElementById('status_text').textContent = 'Error: ' + err.message;
+    } finally {
+        setLoading(false);
+    }
+}
+
+async function runCompare() {
+    setLoading(true);
+    compareMode = true;
+    
+    const body = {
+        dataset_type: document.getElementById('dataset_type').value,
+        dataset_params: getDatasetParams(),
+        model_types: ['svm', 'logistic', 'decision_tree', 'random_forest', 'knn', 'mlp'],
+        model_params: {
+            svm: getModelParams(),
+            logistic: getModelParams(),
+            decision_tree: getModelParams(),
+            random_forest: { max_depth: 5, n_estimators: 50 },
+            knn: getModelParams(),
+            mlp: getModelParams(),
+        },
+        resolution: 60,
+    };
+
+    try {
+        const res = await fetch('/api/compare', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        if (data.success) {
+            compareData = data.results;
+            renderCompareResults(data.results);
+            // Draw first model's boundary
+            currentData = {
+                ...data.results[0],
+                test_accuracy: data.results[0].test_accuracy,
+            };
+            drawCompareBoundary(data.results, 0);
+            updateStats(data.results[0]);
+        }
+    } catch (err) {
+        console.error('Compare error:', err);
+    } finally {
+        setLoading(false);
+    }
+}
+
+// ─── Drawing ────────────────────────────────────────────────────────────
+
+const CLASS_COLORS = [
+    'rgba(96,165,250,0.35)',   // class 0 - blue
+    'rgba(244,114,182,0.35)',  // class 1 - pink
+    'rgba(52,211,153,0.35)',   // class 2 - green
+    'rgba(251,191,36,0.35)',   // class 3 - yellow
+];
+const POINT_COLORS = ['#60a5fa', '#f472b6', '#34d399', '#fbbf24'];
+
+function drawBoundary(data) {
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#080c18';
+    ctx.fillRect(0, 0, W, H);
+
+    const b = data.boundary;
+    const xx = b.xx, yy = b.yy, Z = b.Z;
+
+    // Draw boundary fill
+    const imgData = ctx.createImageData(W, H);
+    for (let py = 0; py < H; py++) {
+        for (let px = 0; px < W; px++) {
+            const gi = Math.min(Math.floor(px / W * (xx[0].length)), xx[0].length - 1);
+            const gj = Math.min(Math.floor(py / H * yy.length), yy.length - 1);
+            const classIdx = Z[gj][gi];
+            const color = CLASS_COLORS[classIdx] || CLASS_COLORS[0];
+            const [r, g, b2, a] = hexToRgba(color);
+            const idx = (py * W + px) * 4;
+            imgData.data[idx] = r;
+            imgData.data[idx+1] = g;
+            imgData.data[idx+2] = b2;
+            imgData.data[idx+3] = a;
+        }
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    // Draw contour lines
+    if (boundaryStyle === 'contour') {
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+        ctx.lineWidth = 0.5;
+        for (let i = 0; i < xx.length; i += 4) {
+            for (let j = 0; j < xx[0].length - 1; j++) {
+                if (Z[i][j] !== Z[i][j+1]) {
+                    const x1 = (j / (xx[0].length-1)) * W;
+                    const x2 = ((j+1) / (xx[0].length-1)) * W;
+                    const y = (i / (xx.length-1)) * H;
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y);
+                    ctx.lineTo(x2, y);
+                    ctx.stroke();
+                }
+            }
+        }
+        for (let j = 0; j < xx[0].length; j += 4) {
+            for (let i = 0; i < xx.length - 1; i++) {
+                if (Z[i][j] !== Z[i+1][j]) {
+                    const y1 = (i / (xx.length-1)) * H;
+                    const y2 = ((i+1) / (xx.length-1)) * H;
+                    const x = (j / (xx[0].length-1)) * W;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y1);
+                    ctx.lineTo(x, y2);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+
+    // Draw decision boundary line
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 1.5;
+    for (let i = 0; i < xx.length; i++) {
+        for (let j = 0; j < xx[0].length - 1; j++) {
+            if (Z[i][j] !== Z[i][j+1]) {
+                const x1 = (j / (xx[0].length-1)) * W;
+                const x2 = ((j+1) / (xx[0].length-1)) * W;
+                const y = (i / (xx.length-1)) * H;
+                ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke();
+            }
+        }
+    }
+    for (let j = 0; j < xx[0].length; j++) {
+        for (let i = 0; i < xx.length - 1; i++) {
+            if (Z[i][j] !== Z[i+1][j]) {
+                const y1 = (i / (xx.length-1)) * H;
+                const y2 = ((i+1) / (xx.length-1)) * H;
+                const x = (j / (xx[0].length-1)) * W;
+                ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x, y2); ctx.stroke();
+            }
+        }
+    }
+
+    // Draw train points
+    const trainPts = data.train_points;
+    const trainLbls = data.train_labels;
+    for (let i = 0; i < trainPts.length; i++) {
+        const [x0, y0] = trainPts[i];
+        const px = ((x0 - b.x_min) / (b.x_max - b.x_min)) * W;
+        const py = H - ((y0 - b.y_min) / (b.y_max - b.y_min)) * H;
+        const color = POINT_COLORS[trainLbls[i]] || POINT_COLORS[0];
+        ctx.beginPath();
+        ctx.arc(px, py, 4, 0, Math.PI * 2);
+        ctx.fillStyle = color + 'aa';
+        ctx.fill();
+    }
+
+    // Draw test points
+    const testPts = data.test_points;
+    const testLbls = data.test_labels;
+    for (let i = 0; i < testPts.length; i++) {
+        const [x0, y0] = testPts[i];
+        const px = ((x0 - b.x_min) / (b.x_max - b.x_min)) * W;
+        const py = H - ((y0 - b.y_min) / (b.y_max - b.y_min)) * H;
+        const color = POINT_COLORS[testLbls[i]] || POINT_COLORS[0];
+        ctx.beginPath();
+        ctx.arc(px, py, 5, 0, Math.PI * 2);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(px, py, 2, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+    }
+
+    document.getElementById('status_text').textContent = `${data.n_train} train | ${data.n_test} test`;
+}
+
+function drawCompareBoundary(results, selectedIdx) {
+    const data = results[selectedIdx];
+    currentData = data;
+    drawBoundary(data);
+    // Highlight selected row
+    document.querySelectorAll('.compare-row').forEach((row, i) => {
+        row.classList.toggle('selected', i === selectedIdx);
+    });
+}
+
+function renderCompareResults(results) {
+    const section = document.getElementById('compare_section');
+    section.style.display = 'block';
+    const container = document.getElementById('compare_results');
+    container.innerHTML = results.map((r, i) => {
+        const acc = r.test_accuracy;
+        const color = acc >= 0.9 ? 'var(--accent2)' : acc >= 0.75 ? 'var(--accent4)' : 'var(--accent3)';
+        return `
+            <div class="compare-row ${i === 0 ? 'selected' : ''}" onclick="drawCompareBoundary(compareData, ${i})">
+                <span class="compare-model-name">${modelMeta[r.model_type]?.name || r.model_type}</span>
+                <span class="compare-model-acc" style="color:${color}">${(acc * 100).toFixed(1)}%</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function updateStats(data) {
+    const acc2cls = (v) => {
+        if (v >= 0.9) return 'good';
+        if (v >= 0.75) return 'ok';
+        return 'bad';
+    };
+    const accEl = (id, v) => {
+        const el = document.getElementById(id);
+        el.textContent = v ? (v * 100).toFixed(1) + '%' : '—';
+        el.className = 'accuracy-value ' + (v ? acc2cls(v) : '');
+    };
+    accEl('train_acc', data.train_accuracy);
+    accEl('test_acc', data.test_accuracy);
+    document.getElementById('n_train').textContent = data.n_train || '—';
+    document.getElementById('n_test').textContent = data.n_test || '—';
+    document.getElementById('n_classes').textContent = data.classes?.length || 2;
+}
+
+function updateParamDisplay() {
+    const params = paramConfigs[currentModel] || [];
+    params.forEach(p => {
+        const el = document.getElementById(`pinfo_${p.key}`);
+        if (el) {
+            const input = document.getElementById(`param_${p.key}`);
+            const val = input ? parseFloat(input.value) : p.val;
+            el.textContent = p.fmt ? p.fmt(val) : val;
+        }
+    });
+}
+
+function hexToRgba(color) {
+    if (color.startsWith('rgba')) {
+        const match = color.match(/[\d.]+/g);
+        return [parseInt(match[0]), parseInt(match[1]), parseInt(match[2]), Math.round(parseFloat(match[3]) * 255)];
+    }
+    const hex = color.replace('#', '');
+    return [
+        parseInt(hex.substring(0,2), 16),
+        parseInt(hex.substring(2,4), 16),
+        parseInt(hex.substring(4,6), 16),
+        255
+    ];
+}
+</script>
+</body>
+</html>
