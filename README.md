@@ -47,6 +47,21 @@ docker build -t boundary-lab .
 docker run -p 5050:5050 boundary-lab
 ```
 
+## ☁️ Deploy to Render (Free)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com)
+
+**One-click deployment:**
+1. Go to [render.com](https://render.com) → Sign up (free)
+2. Connect your GitHub: Settings → GitHub → **Authorize**
+3. Click **New → Web Service** → select `decision-boundary-lab` repo
+4. Render auto-detects Python — just set:
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `gunicorn app:app --bind 0.0.0.0:$PORT`
+5. Click **Create Web Service** → done! 🌐
+
+Or use the `render.yaml` blueprint (Render auto-applies it on push).
+
 ## 🧪 How It Works
 
 ### API Endpoints

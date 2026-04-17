@@ -1,0 +1,30 @@
+name: Deploy to Render
+
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Verify app
+        run: |
+          python -c "from app import app; print('App loads OK')"
+
+      # Optional: notify Render via webhook after push
+      # Add RENDER_DEPLOY_HOOK_URL as a GitHub Secret to trigger Render auto-deploy
+      - name: Trigger Render Deploy
+        if: vars.RENDER_DEPLOY_HOOK_URL != ''
+        run: curl -s -X POST "${{ vars.RENDER_DEPLOY_HOOK_URL }}"
